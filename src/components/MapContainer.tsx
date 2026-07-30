@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GraphNode, GraphEdge, Place, PathfindingStep } from '../types';
-import { MapPin, Navigation, Info, ShieldAlert, ToggleLeft, ToggleRight, Trash2, Footprints, Maximize2, Minimize2 } from 'lucide-react';
+import { MapPin, Navigation, Info, Trash2, Footprints, Maximize2, Minimize2 } from 'lucide-react';
 
 interface MapContainerProps {
   nodes: GraphNode[];
@@ -38,7 +38,6 @@ export default function MapContainer({
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
-  const [isTopographical, setIsTopographical] = useState<boolean>(false);
 
   // Find place details for a given node
   const getPlaceForNode = (node: GraphNode) => {
@@ -74,8 +73,8 @@ export default function MapContainer({
   const getEdgeStyle = (edge: GraphEdge) => {
     if (edge.isBlocked) {
       return {
-        stroke: isTopographical ? '#b91c1c' : '#f87171', // deeper red for topo
-        strokeWidth: isTopographical ? 3.5 : 3,
+        stroke: '#f87171',
+        strokeWidth: 3,
         strokeDasharray: '5, 5',
       };
     }
@@ -97,7 +96,7 @@ export default function MapContainer({
     const isStepPathEdge = (fromId: string, toId: string) => {
       if (!currentStep) return false;
       const prev = currentStep.previous;
-      
+
       // If target has a previous parent in the step, and they are from/to
       if (prev[fromId] === toId || prev[toId] === fromId) {
         // Also check if both are visited or in frontier
@@ -110,31 +109,40 @@ export default function MapContainer({
 
     if (currentStep && isStepPathEdge(edge.from, edge.to)) {
       return {
-        stroke: isTopographical ? '#d97706' : '#fbbf24', // golden amber vs amber-400
-        strokeWidth: isTopographical ? 4.5 : 4,
+        stroke: '#fbbf24',
+        strokeWidth: 4,
         strokeDasharray: 'none',
       };
     }
 
     if (isPathEdge(edge.from, edge.to)) {
       return {
-        stroke: isTopographical ? '#059669' : '#10b981', // deeper jade green vs emerald-500
-        strokeWidth: isTopographical ? 5.5 : 5,
+        stroke: '#10b981',
+        strokeWidth: 5,
         strokeDasharray: 'none',
-        filter: isTopographical
-          ? 'drop-shadow(0 0 5px rgba(5, 150, 105, 0.6))'
-          : 'drop-shadow(0 0 4px rgba(16, 185, 129, 0.5))',
+        filter: 'drop-shadow(0 0 4px rgba(16, 185, 129, 0.5))',
       };
     }
 
     return {
-      stroke: isTopographical ? '#C4AF98' : '#cbd5e1', // soft sand wood vs slate-300
-      strokeWidth: isTopographical ? 2.5 : 2,
+      stroke: '#cbd5e1',
+      strokeWidth: 2,
       strokeDasharray: 'none',
     };
   };
 
   const selectedPlace = selectedNode ? getPlaceForNode(selectedNode) : null;
+
+  // Compute the SVG viewBox directly from the node coordinates (+ padding for
+  // labels/circles) so the map always frames the actual vertices, regardless
+  // of how the underlying dataset's layout is shaped.
+  const nodeXs = nodes.map((n) => n.x);
+  const nodeYs = nodes.map((n) => n.y);
+  const VIEW_PADDING = 90;
+  const viewBoxMinX = Math.min(...nodeXs) - VIEW_PADDING;
+  const viewBoxMinY = Math.min(...nodeYs) - VIEW_PADDING;
+  const viewBoxWidth = Math.max(...nodeXs) - Math.min(...nodeXs) + VIEW_PADDING * 2;
+  const viewBoxHeight = Math.max(...nodeYs) - Math.min(...nodeYs) + VIEW_PADDING * 2;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full items-stretch">
@@ -175,30 +183,6 @@ export default function MapContainer({
               </div>
             </div>
 
-            {/* View Mode Toggle Pill Switch */}
-            <div className="flex items-center bg-slate-200/60 p-0.5 rounded-lg border border-slate-300 shadow-3xs shrink-0 ml-auto sm:ml-0">
-              <button
-                onClick={() => setIsTopographical(false)}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-tight transition-all duration-150 ${
-                  !isTopographical
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/40'
-                }`}
-              >
-                Schematic
-              </button>
-              <button
-                onClick={() => setIsTopographical(true)}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-tight transition-all duration-150 ${
-                  isTopographical
-                    ? 'bg-amber-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/40'
-                }`}
-              >
-                Topographical
-              </button>
-            </div>
-
             {/* Canvas Expand Switch */}
             <button
               onClick={() => setIsExpanded(!isExpanded)}
@@ -221,223 +205,12 @@ export default function MapContainer({
         </div>
 
         {/* Vector SVG Canvas */}
-        <div className={`flex-1 ${isTopographical ? 'bg-[#F4EFE0]' : 'bg-[#f1f5f9]'} relative overflow-hidden select-none transition-colors duration-500`}>
+        <div className="flex-1 bg-[#f1f5f9] relative overflow-hidden select-none">
           <svg
             className="w-full h-full"
-            viewBox="300 0 600 1000" // focus on the central park area containing nodes
+            viewBox={`${viewBoxMinX} ${viewBoxMinY} ${viewBoxWidth} ${viewBoxHeight}`}
             preserveAspectRatio="xMidYMid meet"
           >
-            {isTopographical && (
-              <defs>
-                {/* Ancient paper/earth radial shading */}
-                <radialGradient id="topo-bg" cx="50%" cy="50%" r="70%">
-                  <stop offset="0%" stopColor="#FAF6EC" />
-                  <stop offset="60%" stopColor="#F5EFE0" />
-                  <stop offset="100%" stopColor="#EADFCE" />
-                </radialGradient>
-                {/* Lush tropical dense jungle gradient */}
-                <linearGradient id="forest-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#A8C3A9" stopOpacity="0.45" />
-                  <stop offset="100%" stopColor="#87A988" stopOpacity="0.5" />
-                </linearGradient>
-                {/* Serene reservoir/baray water gradient */}
-                <linearGradient id="moat-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#bae6fd" stopOpacity="0.6" />
-                  <stop offset="100%" stopColor="#7dd3fc" stopOpacity="0.75" />
-                </linearGradient>
-              </defs>
-            )}
-
-            {/* Giant Background Cover in Topographical Mode */}
-            {isTopographical && (
-              <rect x="200" y="0" width="800" height="1050" fill="url(#topo-bg)" />
-            )}
-
-            {/* Topographical Contour/Elevation Lines */}
-            {isTopographical && (
-              <g id="contour-lines" className="pointer-events-none opacity-80 transition-opacity duration-500">
-                {/* Phnom Bakheng elevation contours */}
-                <path d="M 440 440 Q 460 410 480 410 Q 510 420 515 440 Q 510 470 480 470 Q 450 460 440 440 Z" fill="none" stroke="#D3C2A9" strokeWidth="1" strokeDasharray="3, 3" />
-                <path d="M 410 440 Q 450 390 480 390 Q 530 400 540 440 Q 530 490 480 495 Q 430 480 410 440 Z" fill="none" stroke="#C8B89E" strokeWidth="1" strokeDasharray="4, 3" />
-                <path d="M 375 440 Q 430 365 480 365 Q 565 380 575 440 Q 560 515 480 520 Q 400 500 375 440 Z" fill="none" stroke="#C8B89E" strokeWidth="1" />
-                <text x="480" y="380" fill="#9C8B72" fontSize="8" fontFamily="monospace" textAnchor="middle" opacity="0.8">Phnom Bakheng - 100m</text>
-
-                {/* Natural park undulating isolines */}
-                <path d="M 300 200 C 400 250, 500 150, 600 220 C 700 280, 800 180, 900 230" fill="none" stroke="#DCD0BC" strokeWidth="0.75" />
-                <path d="M 300 350 C 420 380, 480 310, 620 390 C 720 420, 780 330, 900 360" fill="none" stroke="#DCD0BC" strokeWidth="0.75" />
-                <path d="M 300 650 C 390 690, 520 620, 650 710 C 740 760, 820 680, 900 720" fill="none" stroke="#DCD0BC" strokeWidth="0.75" />
-                <path d="M 300 800 C 440 850, 510 780, 680 880 C 760 920, 840 850, 900 890" fill="none" stroke="#DCD0BC" strokeWidth="0.75" />
-
-                {/* Grid heights */}
-                <text x="310" y="210" fill="#B2A38C" fontSize="7" fontFamily="monospace">60m</text>
-                <text x="310" y="360" fill="#B2A38C" fontSize="7" fontFamily="monospace">70m</text>
-                <text x="310" y="660" fill="#B2A38C" fontSize="7" fontFamily="monospace">80m</text>
-                <text x="310" y="810" fill="#B2A38C" fontSize="7" fontFamily="monospace">90m</text>
-              </g>
-            )}
-
-            {/* Dense Forest Enclosures in Topographical Mode */}
-            {isTopographical && (
-              <g id="forest-zones" className="pointer-events-none opacity-85 transition-opacity duration-500">
-                {/* Angkor Thom City boundary forest */}
-                <rect x="410" y="210" width="180" height="220" rx="6" fill="url(#forest-grad)" stroke="#8FA890" strokeWidth="1" />
-                <text x="500" y="235" fill="#5F7D61" fontSize="9" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle" opacity="0.6" letterSpacing="1">ANGKOR THOM JUNGLE RESERVES</text>
-
-                {/* Ta Prohm forest */}
-                <rect x="710" y="310" width="120" height="150" rx="8" fill="url(#forest-grad)" stroke="#8FA890" strokeWidth="1" />
-                <text x="770" y="325" fill="#5F7D61" fontSize="8" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle" opacity="0.6">TA PROHM FOREST</text>
-
-                {/* Northern sanctuary forest (Tep Pranam / Terrace of the Leper King) */}
-                <rect x="440" y="110" width="120" height="90" rx="8" fill="url(#forest-grad)" stroke="#8FA890" strokeWidth="1" />
-                <text x="500" y="125" fill="#5F7D61" fontSize="8" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle" opacity="0.6">NORTHERN SANCTUARY CANOPY</text>
-              </g>
-            )}
-
-            {/* Siem Reap River in Topographical Mode */}
-            {isTopographical && (
-              <g id="siem-reap-river" className="pointer-events-none transition-opacity duration-500">
-                {/* Flowing natural riverbed */}
-                <path
-                  d="M 850 30 Q 750 180 670 280 T 630 500 T 600 700 T 540 980"
-                  fill="none"
-                  stroke="#E2EDF8"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 850 30 Q 750 180 670 280 T 630 500 T 600 700 T 540 980"
-                  fill="none"
-                  stroke="#79b6e6"
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                />
-                <text x="640" y="550" fill="#4B88BE" fontSize="8" fontWeight="600" fontFamily="sans-serif" transform="rotate(-35, 640, 550)" opacity="0.75">Siem Reap River</text>
-              </g>
-            )}
-
-            {/* Barays (Reservoirs) and Moats */}
-            {isTopographical ? (
-              <g id="topo-reservoirs" className="pointer-events-none">
-                {/* Angkor Wat Moat (Filled deep turquoise) */}
-                <rect
-                  x="420"
-                  y="480"
-                  width="160"
-                  height="100"
-                  rx="4"
-                  fill="url(#moat-grad)"
-                  stroke="#38bdf8"
-                  strokeWidth="2"
-                />
-                <rect x="425" y="485" width="150" height="90" rx="3" fill="none" stroke="#0284c7" strokeWidth="0.5" strokeOpacity="0.5" />
-                <text x="500" y="535" fill="#0369a1" fontSize="9" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle" opacity="0.6">ANGKOR WAT MOAT</text>
-
-                {/* Srah Srang Bathing Pool */}
-                <rect
-                  x="810"
-                  y="420"
-                  width="60"
-                  height="40"
-                  rx="2"
-                  fill="url(#moat-grad)"
-                  stroke="#38bdf8"
-                  strokeWidth="1.5"
-                />
-                <text x="840" y="445" fill="#0369a1" fontSize="7" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle" opacity="0.6">Srah Srang</text>
-
-                {/* Angkor Thom Moat Water outline bounds */}
-                <rect
-                  x="400"
-                  y="200"
-                  width="200"
-                  height="240"
-                  rx="6"
-                  fill="none"
-                  stroke="#7dd3fc"
-                  strokeWidth="4"
-                  strokeOpacity="0.8"
-                />
-                <rect
-                  x="396"
-                  y="196"
-                  width="208"
-                  height="248"
-                  rx="8"
-                  fill="none"
-                  stroke="#0284c7"
-                  strokeWidth="1"
-                  strokeOpacity="0.4"
-                />
-
-                {/* West Baray - Massive Reservoir */}
-                <rect
-                  x="305"
-                  y="250"
-                  width="65"
-                  height="160"
-                  rx="2"
-                  fill="url(#moat-grad)"
-                  stroke="#38bdf8"
-                  strokeWidth="1"
-                />
-                <text x="330" y="330" fill="#0369a1" fontSize="8" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle" transform="rotate(-90, 330, 330)" opacity="0.6">WEST BARAY</text>
-
-                {/* East Baray - Ancient dry/sandy reservoir */}
-                <rect
-                  x="780"
-                  y="200"
-                  width="95"
-                  height="140"
-                  rx="2"
-                  fill="url(#moat-grad)"
-                  stroke="#38bdf8"
-                  strokeWidth="1"
-                  strokeOpacity="0.5"
-                />
-                <text x="820" y="270" fill="#0369a1" fontSize="8" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle" transform="rotate(90, 820, 270)" opacity="0.6">EAST BARAY</text>
-              </g>
-            ) : (
-              <g id="schematic-water">
-                {/* Angkor Wat Moat */}
-                <rect
-                  x="420"
-                  y="480"
-                  width="160"
-                  height="100"
-                  rx="4"
-                  fill="#bae6fd"
-                  fillOpacity="0.45"
-                  stroke="#0284c7"
-                  strokeWidth="1.5"
-                  strokeDasharray="4, 4"
-                />
-                {/* Srah Srang Bathing Pool */}
-                <rect
-                  x="810"
-                  y="420"
-                  width="60"
-                  height="40"
-                  rx="2"
-                  fill="#bae6fd"
-                  fillOpacity="0.5"
-                  stroke="#0284c7"
-                  strokeWidth="1"
-                />
-                {/* Angkor Thom Moat outline */}
-                <rect
-                  x="400"
-                  y="200"
-                  width="200"
-                  height="240"
-                  rx="6"
-                  fill="none"
-                  stroke="#94a3b8"
-                  strokeWidth="2"
-                  strokeOpacity="0.3"
-                />
-              </g>
-            )}
-
             {/* Roads/Edges Layer */}
             {edges.map((edge) => {
               const fromNode = nodes.find((n) => n.id === edge.from);
@@ -522,9 +295,7 @@ export default function MapContainer({
                     className={`transition-all duration-300 fill-current ${
                       getNodeColor(node.id).split(' ')[0]
                     } ${
-                      getNodeColor(node.id).includes('ring')
-                        ? (isTopographical ? 'stroke-[#F4EFE0] stroke-2' : 'stroke-white stroke-2')
-                        : (isTopographical ? 'stroke-[#5C4033] stroke-2' : 'stroke-slate-700 stroke')
+                      getNodeColor(node.id).includes('ring') ? 'stroke-white stroke-2' : 'stroke-slate-700 stroke'
                     }`}
                   />
 
@@ -553,19 +324,19 @@ export default function MapContainer({
                     textAnchor="middle"
                     style={{
                       paintOrder: 'stroke',
-                      stroke: isTopographical ? '#F4EFE0' : '#f1f5f9',
+                      stroke: '#f1f5f9',
                       strokeWidth: '3px',
                       strokeLinejoin: 'round',
                     }}
                     className={`text-[10px] font-semibold font-sans select-none pointer-events-none transition-colors duration-200
                       ${
                         startId === node.id
-                          ? (isTopographical ? 'fill-emerald-800 font-extrabold' : 'fill-emerald-700 font-bold')
+                          ? 'fill-emerald-700 font-bold'
                           : endId === node.id
-                          ? (isTopographical ? 'fill-red-800 font-extrabold' : 'fill-red-700 font-bold')
+                          ? 'fill-red-700 font-bold'
                           : selectedNode?.id === node.id
                           ? 'fill-slate-900 font-bold'
-                          : (isTopographical ? 'fill-[#451a03] font-medium' : 'fill-slate-600')
+                          : 'fill-slate-600'
                       }`}
                   >
                     {node.name.length > 18 ? `${node.name.slice(0, 16)}...` : node.name}
@@ -574,46 +345,6 @@ export default function MapContainer({
               );
             })}
 
-            {/* Topographical Map Ornaments */}
-            {isTopographical && (
-              <g id="map-ornaments" className="pointer-events-none opacity-85 transition-opacity duration-500">
-                {/* Compass Rose */}
-                <g transform="translate(350, 920)">
-                  <circle r="18" fill="none" stroke="#9C8B72" strokeWidth="1" />
-                  <circle r="2" fill="#9C8B72" />
-                  {/* Points */}
-                  <polygon points="0,-16 3,-3 0,0" fill="#8B5A2B" />
-                  <polygon points="0,-16 -3,-3 0,0" fill="#CD853F" />
-                  <polygon points="0,16 3,3 0,0" fill="#CD853F" />
-                  <polygon points="0,16 -3,3 0,0" fill="#8B5A2B" />
-                  <polygon points="16,0 3,3 0,0" fill="#8B5A2B" />
-                  <polygon points="16,0 3,-3 0,0" fill="#CD853F" />
-                  <polygon points="-16,0 -3,3 0,0" fill="#CD853F" />
-                  <polygon points="-16,0 -3,-3 0,0" fill="#8B5A2B" />
-                  {/* Cardinal labels */}
-                  <text y="-19" textAnchor="middle" fill="#5C4033" fontSize="8" fontWeight="bold">N</text>
-                  <text x="19" y="3" textAnchor="start" fill="#5C4033" fontSize="7" fontWeight="bold">E</text>
-                  <text y="24" textAnchor="middle" fill="#5C4033" fontSize="7" fontWeight="bold">S</text>
-                  <text x="-19" y="3" textAnchor="end" fill="#5C4033" fontSize="7" fontWeight="bold">W</text>
-                </g>
-
-                {/* Scale Indicator */}
-                <g transform="translate(315, 960)">
-                  {/* Alternating black and white scale block */}
-                  <rect x="0" y="0" width="30" height="3" fill="#5C4033" />
-                  <rect x="30" y="0" width="30" height="3" fill="#FAF6EC" stroke="#5C4033" strokeWidth="0.5" />
-                  <line x1="0" y1="0" x2="60" y2="0" stroke="#5C4033" strokeWidth="1" />
-                  <line x1="0" y1="3" x2="60" y2="3" stroke="#5C4033" strokeWidth="1" />
-                  <line x1="0" y1="-2" x2="0" y2="5" stroke="#5C4033" strokeWidth="1" />
-                  <line x1="30" y1="-2" x2="30" y2="5" stroke="#5C4033" strokeWidth="1" />
-                  <line x1="60" y1="-2" x2="60" y2="5" stroke="#5C4033" strokeWidth="1" />
-                  <text x="0" y="-5" fill="#5C4033" fontSize="7" fontFamily="monospace">0</text>
-                  <text x="30" y="-5" fill="#5C4033" fontSize="7" fontFamily="monospace" textAnchor="middle">1km</text>
-                  <text x="60" y="-5" fill="#5C4033" fontSize="7" fontFamily="monospace" textAnchor="end">2km</text>
-                  <text x="30" y="14" fill="#8B7E66" fontSize="7" fontWeight="bold" textAnchor="middle" letterSpacing="0.5">MAP SCALE 1:50,000</text>
-                </g>
-              </g>
-            )}
           </svg>
 
           {/* Inline floating Map HUD Controls */}
