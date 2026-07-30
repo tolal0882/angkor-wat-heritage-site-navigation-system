@@ -19,16 +19,10 @@ import HashTableVisualizer from './components/HashTableVisualizer';
 // Icons
 import {
   Compass,
-  MapPin,
   Network,
   Hash,
-  Award,
-  ChevronRight,
   BookOpen,
-  Info,
-  History,
   Workflow,
-  Sparkles,
 } from 'lucide-react';
 
 export default function App() {
@@ -444,68 +438,15 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      {/* 4. Academic Cooperation/Report Footer */}
-      <footer className="bg-slate-900 text-white mt-12 border-t border-slate-800 py-10 px-6">
-        <div className="max-w-7xl mx-auto space-y-8">
-          
-          {/* DSA Integration Flow diagram */}
-          <div className="bg-slate-950/80 border border-slate-800/80 p-6 rounded-2xl space-y-4">
-            <h4 className="text-sm font-bold font-mono text-amber-400 uppercase tracking-wider flex items-center gap-2">
-              <Award className="w-5 h-5 text-amber-500 animate-pulse" />
-              Academic Report: How the Three Data Structures Collaborate
-            </h4>
-            <p className="text-xs text-slate-300 leading-relaxed max-w-5xl">
-              In a professional-grade production suite, data structures rarely operate in isolation. This application connects them in an end-to-end data pipelines model suitable for architectural reviews:
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-              {/* Box 1 */}
-              <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 bg-amber-500/10 text-amber-400 rounded-lg text-xs font-mono font-bold">1</span>
-                  <h5 className="font-semibold text-xs text-white">O(1) Hash Query Entry</h5>
-                </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  When a traveler inputs a destination, the system avoids costly linear searches. It queries the <strong className="text-slate-300">Hash Table</strong> which executes a polynomial hash index probe in constant time <strong className="text-amber-400">O(1)</strong>, immediately locating metadata.
-                </p>
-              </div>
-
-              {/* Box 2 */}
-              <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 bg-sky-500/10 text-sky-400 rounded-lg text-xs font-mono font-bold">2</span>
-                  <h5 className="font-semibold text-xs text-white">Binary Search Tree Lookup</h5>
-                </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Retrieved metadata is indexed inside a <strong className="text-slate-300">Binary Search Tree</strong> ordered alphabetically by site name. It supports <strong className="text-amber-400">Search</strong>, <strong className="text-amber-400">Find-Min</strong>, and <strong className="text-amber-400">Find-Max</strong> in O(log n) average time.
-                </p>
-              </div>
-
-              {/* Box 3 */}
-              <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 bg-indigo-500/10 text-indigo-400 rounded-lg text-xs font-mono font-bold">3</span>
-                  <h5 className="font-semibold text-xs text-white">Graph Routing & Traversal</h5>
-                </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Finally, the site is passed to the <strong className="text-slate-300">Graph Adjacency List</strong>. Dijkstra's algorithm finds the shortest weighted route in <strong className="text-indigo-400">O((V + E) log V)</strong> time, while BFS/DFS explore full reachability from a chosen starting temple.
-                </p>
-              </div>
-            </div>
+      {/* 4. Footer */}
+      <footer className="bg-slate-900 text-white mt-12 border-t border-slate-800 py-6 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-[11px] text-slate-500 font-mono gap-4">
+          <span>Angkor Wat Heritage Site Navigation System v1.0.0</span>
+          <div className="flex items-center gap-1.5">
+            <span>Built for Data Structures & Algorithms Coursework</span>
+            <span>•</span>
+            <span className="text-slate-400">Siem Reap, Cambodia</span>
           </div>
-
-          {/* Copyright/Closing credits */}
-          <div className="flex flex-col md:flex-row justify-between items-center text-[11px] text-slate-500 font-mono gap-4 pt-4 border-t border-slate-800">
-            <div>
-              <span>Angkor Wat Heritage Site Navigation System v1.0.0</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span>Built for Data Structures & Algorithms Coursework</span>
-              <span>•</span>
-              <span className="text-slate-400">Siem Reap, Cambodia</span>
-            </div>
-          </div>
-
         </div>
       </footer>
     </div>
