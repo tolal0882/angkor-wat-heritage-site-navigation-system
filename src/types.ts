@@ -70,7 +70,7 @@ export interface BSTNode {
   right: BSTNode | null;
 }
 
-export type BSTOperation = 'search' | 'min' | 'max';
+export type BSTOperation = 'search' | 'min' | 'max' | 'preorder';
 
 export interface BSTStep {
   currentId: string | null;

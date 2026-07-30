@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { PLACES } from '../data/places';
-import { buildBST, solveBSTSearch, solveBSTFindMin, solveBSTFindMax } from '../utils/algorithms';
+import { buildBST, solveBSTSearch, solveBSTFindMin, solveBSTFindMax, solveBSTPreorder } from '../utils/algorithms';
 import { BSTNode, BSTStep, BSTOperation } from '../types';
 import {
   Play,
@@ -18,6 +18,7 @@ import {
   Search,
   ArrowDownToLine,
   ArrowUpToLine,
+  ListOrdered,
   ClipboardList,
   Maximize2,
   Minimize2,
@@ -80,8 +81,10 @@ export default function TreeVisualizer() {
       computedSteps = solveBSTSearch(bstRoot, searchQuery);
     } else if (op === 'min') {
       computedSteps = solveBSTFindMin(bstRoot);
-    } else {
+    } else if (op === 'max') {
       computedSteps = solveBSTFindMax(bstRoot);
+    } else {
+      computedSteps = solveBSTPreorder(bstRoot);
     }
     setSteps(computedSteps);
     setCurrentStepIndex(0);
@@ -343,6 +346,18 @@ export default function TreeVisualizer() {
                   <ArrowUpToLine className="w-3.5 h-3.5" />
                   Find Max
                 </button>
+                <button
+                  onClick={() => {
+                    setOperation('preorder');
+                    runOperation('preorder', query);
+                  }}
+                  disabled={isRunning}
+                  className={`flex items-center gap-1 py-1.5 px-3 rounded-lg font-semibold text-xs transition-all duration-150
+                    ${operation === 'preorder' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800 disabled:opacity-50'}`}
+                >
+                  <ListOrdered className="w-3.5 h-3.5" />
+                  Preorder
+                </button>
               </div>
             </div>
 
@@ -462,16 +477,27 @@ export default function TreeVisualizer() {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
           <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
             <GitCompare className="w-4 h-4 text-indigo-600" />
-            Comparison Path (Root &rarr; Result)
+            {operation === 'preorder' ? 'Preorder Visit Order (Root → Left → Right)' : 'Comparison Path (Root → Result)'}
           </h4>
           <p className="text-xs text-slate-500">
-            Each hop compares the target key against the current node and moves left (smaller) or right (larger),
-            just like <code className="text-[11px] bg-slate-100 px-1 rounded">HeritageBST</code> in the Python reference implementation.
+            {operation === 'preorder' ? (
+              <>
+                Each node is visited before its children, recursing left before right, just like{' '}
+                <code className="text-[11px] bg-slate-100 px-1 rounded">HeritageBST.preorder()</code> in the Python reference implementation.
+              </>
+            ) : (
+              <>
+                Each hop compares the target key against the current node and moves left (smaller) or right (larger),
+                just like <code className="text-[11px] bg-slate-100 px-1 rounded">HeritageBST</code> in the Python reference implementation.
+              </>
+            )}
           </p>
 
           <div className="flex flex-wrap items-center gap-2">
             {currentStep.visitedIds.length === 0 ? (
-              <span className="text-xs text-slate-400 font-mono italic">No comparisons yet</span>
+              <span className="text-xs text-slate-400 font-mono italic">
+                {operation === 'preorder' ? 'No sites visited yet' : 'No comparisons yet'}
+              </span>
             ) : (
               currentStep.visitedIds.map((id, idx) => {
                 const node = nodeById(id);

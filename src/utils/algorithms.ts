@@ -338,7 +338,7 @@ export function buildHashTable(places: Place[]): HashBucket[] {
 
 // ==========================================
 // 4. TREE - BINARY SEARCH TREE (ordered by name)
-//    Exposed operations: Search, Find Min, Find Max
+//    Exposed operations: Search, Find Min, Find Max, Preorder Traversal
 // ==========================================
 
 /**
@@ -461,6 +461,43 @@ export function solveBSTFindMin(root: BSTNode | null): BSTStep[] {
       current = null;
     }
   }
+
+  return steps;
+}
+
+/**
+ * Step-by-step Preorder Traversal (Root -> Left -> Right), mirrors
+ * HeritageBST.preorder() in Smart_Tour_Planning_System.py
+ */
+export function solveBSTPreorder(root: BSTNode | null): BSTStep[] {
+  const steps: BSTStep[] = [];
+  const visited: string[] = [];
+
+  steps.push({
+    currentId: null,
+    visitedIds: [],
+    description: `Start Preorder Traversal at the root. Visit order: Root -> Left subtree -> Right subtree.`,
+  });
+
+  const visit = (node: BSTNode | null) => {
+    if (!node) return;
+    visited.push(node.id);
+    steps.push({
+      currentId: node.id,
+      visitedIds: [...visited],
+      description: `Visit "${node.place.name}", then recurse into its left subtree before its right subtree.`,
+    });
+    visit(node.left);
+    visit(node.right);
+  };
+
+  visit(root);
+
+  steps.push({
+    currentId: null,
+    visitedIds: [...visited],
+    description: `Preorder traversal complete. Visited all ${visited.length} heritage site(s).`,
+  });
 
   return steps;
 }

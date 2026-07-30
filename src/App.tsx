@@ -221,7 +221,7 @@ export default function App() {
             <p className="text-xs md:text-sm text-slate-300 font-sans max-w-3xl leading-relaxed">
               An advanced interactive simulator combining three fundamental computer science structures:
               <strong className="text-amber-300 font-medium"> Hash Tables</strong> for high-speed indexing,
-              <strong className="text-amber-300 font-medium"> Binary Search Trees</strong> for Search / Find-Min / Find-Max lookups, and
+              <strong className="text-amber-300 font-medium"> Binary Search Trees</strong> for Search / Find-Min / Find-Max / Preorder lookups, and
               <strong className="text-amber-300 font-medium"> Graph Theory</strong> with Dijkstra's, BFS & DFS routing.
             </p>
           </div>
