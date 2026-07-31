@@ -12,6 +12,7 @@ export type PlaceType =
 
 export interface Place {
   id: string;
+  templeId: string; // Human-readable ID, e.g. "T01", matching the Excel dataset's Temple ID column
   name: string;
   type: PlaceType;
   openingHours: string;
@@ -61,21 +62,20 @@ export interface PathfindingStep {
 }
 
 // ==========================================
-// Binary Search Tree (ordered by Place name)
+// Binary Search Tree (ordered by Category)
 // ==========================================
 export interface BSTNode {
   id: string;
-  place: Place;
+  category: PlaceType;
+  places: Place[];
   left: BSTNode | null;
   right: BSTNode | null;
 }
-
-export type BSTOperation = 'search';
 
 export interface BSTStep {
   currentId: string | null;
   visitedIds: string[];
   description: string;
   comparison?: 'left' | 'right' | 'found' | 'none';
-  result?: Place | null;
+  result?: Place[] | null;
 }

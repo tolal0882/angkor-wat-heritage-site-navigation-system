@@ -10,6 +10,7 @@ import { Place } from '../types';
 export const PLACES: Place[] = [
   {
     id: 'angkor_wat',
+    templeId: 'T01',
     name: 'Angkor Wat',
     type: 'Main Temple',
     openingHours: '5:00 AM - 5:30 PM',
@@ -20,6 +21,7 @@ export const PLACES: Place[] = [
   },
   {
     id: 'phnom_bakheng',
+    templeId: 'T02',
     name: 'Phnom Bakheng',
     type: 'Mountain Temple',
     openingHours: '5:00 AM - 5:30 PM',
@@ -30,6 +32,7 @@ export const PLACES: Place[] = [
   },
   {
     id: 'bayon',
+    templeId: 'T03',
     name: 'Bayon',
     type: 'Main Temple',
     openingHours: '7:30 AM - 5:30 PM',
@@ -40,6 +43,7 @@ export const PLACES: Place[] = [
   },
   {
     id: 'baphuon',
+    templeId: 'T04',
     name: 'Baphuon',
     type: 'Mountain Temple',
     openingHours: '7:30 AM - 5:30 PM',
@@ -50,6 +54,7 @@ export const PLACES: Place[] = [
   },
   {
     id: 'terrace_of_the_elephants',
+    templeId: 'T05',
     name: 'Terrace of the Elephants',
     type: 'Historical Monument',
     openingHours: '7:30 AM - 5:30 PM',
@@ -60,6 +65,7 @@ export const PLACES: Place[] = [
   },
   {
     id: 'terrace_of_the_leper_king',
+    templeId: 'T06',
     name: 'Terrace of the Leper King',
     type: 'Historical Monument',
     openingHours: '7:30 AM - 5:30 PM',
@@ -70,6 +76,7 @@ export const PLACES: Place[] = [
   },
   {
     id: 'tep_pranam',
+    templeId: 'T07',
     name: 'Tep Pranam',
     type: 'Historical Monument',
     openingHours: '7:30 AM - 5:30 PM',
@@ -80,6 +87,7 @@ export const PLACES: Place[] = [
   },
   {
     id: 'preah_pithu_u',
+    templeId: 'T08',
     name: 'Preah Pithu U',
     type: 'Historical Monument',
     openingHours: '7:30 AM - 5:30 PM',
@@ -90,6 +98,7 @@ export const PLACES: Place[] = [
   },
   {
     id: 'ta_tuot',
+    templeId: 'T09',
     name: 'Ta Tuot',
     type: 'Historical Monument',
     openingHours: '7:30 AM - 5:30 PM',
@@ -100,6 +109,7 @@ export const PLACES: Place[] = [
   },
   {
     id: 'ta_keo',
+    templeId: 'T10',
     name: 'Ta Keo',
     type: 'Mountain Temple',
     openingHours: '7:30 AM - 5:30 PM',
@@ -110,6 +120,7 @@ export const PLACES: Place[] = [
   },
   {
     id: 'ta_prohm',
+    templeId: 'T11',
     name: 'Ta Prohm',
     type: 'Monastery Temple',
     openingHours: '7:30 AM - 5:30 PM',
@@ -120,6 +131,7 @@ export const PLACES: Place[] = [
   },
   {
     id: 'banteay_kdei',
+    templeId: 'T12',
     name: 'Banteay Kdei',
     type: 'Monastery Temple',
     openingHours: '7:30 AM - 5:30 PM',
@@ -130,6 +142,7 @@ export const PLACES: Place[] = [
   },
   {
     id: 'kravan',
+    templeId: 'T13',
     name: 'Kravan',
     type: 'Hindu Temple',
     openingHours: '7:30 AM - 5:30 PM',
@@ -140,6 +153,7 @@ export const PLACES: Place[] = [
   },
   {
     id: 'thommanon',
+    templeId: 'T14',
     name: 'Thommanon',
     type: 'Hindu Temple',
     openingHours: '7:30 AM - 5:30 PM',

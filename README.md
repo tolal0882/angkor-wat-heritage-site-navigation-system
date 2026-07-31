@@ -13,10 +13,10 @@ same project.
   - **Dijkstra's Algorithm** - shortest route between any two sites.
   - **BFS** - level-by-level exploration from a chosen starting site.
   - **DFS** - depth-first exploration from a chosen starting site.
-- **Binary Search Tree** - sites indexed alphabetically by name, supporting
-  **Search**.
-- **Hash Table** - O(1) average lookup of a heritage site by name, with a
-  visualized chaining/collision model.
+- **Binary Search Tree** - sites indexed alphabetically by Category, supporting
+  **Browse by Category**.
+- **Hash Table** - O(1) average lookup of a heritage site by ID (e.g. `T01`),
+  with a visualized chaining/collision model.
 
 See [ANGKOR_WAT_DATASET.md](ANGKOR_WAT_DATASET.md) for the full dataset and
 road network.

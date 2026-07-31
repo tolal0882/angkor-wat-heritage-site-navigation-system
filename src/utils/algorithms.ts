@@ -325,9 +325,9 @@ export function buildHashTable(places: Place[]): HashBucket[] {
   }));
 
   places.forEach((place) => {
-    const { hashCode, index } = computeCustomHash(place.name);
+    const { hashCode, index } = computeCustomHash(place.templeId);
     table[index].items.push({
-      key: place.name,
+      key: place.templeId,
       value: place,
       hashCode,
     });
@@ -337,21 +337,23 @@ export function buildHashTable(places: Place[]): HashBucket[] {
 }
 
 // ==========================================
-// 4. TREE - BINARY SEARCH TREE (ordered by name)
-//    Exposed operations: Search
+// 4. TREE - BINARY SEARCH TREE (ordered by Category)
+//    Exposed operations: Browse by Category
 // ==========================================
 
 /**
- * Builds a BST from the heritage site list, inserting in dataset order and
- * comparing by lowercase Name - mirroring HeritageBST.insert() in
- * Smart_Tour_Planning_System.py
+ * Builds a BST from the heritage site list, filing each site under its
+ * Category node (BST ordered alphabetically by Category) - mirroring
+ * HeritageBST.insert() in Smart_Tour_Planning_System.py
  */
 export function buildBST(places: Place[]): BSTNode | null {
   const insert = (node: BSTNode | null, place: Place): BSTNode => {
     if (node === null) {
-      return { id: place.id, place, left: null, right: null };
+      return { id: place.type, category: place.type, places: [place], left: null, right: null };
     }
-    if (place.name.toLowerCase() < node.place.name.toLowerCase()) {
+    if (place.type.toLowerCase() === node.category.toLowerCase()) {
+      node.places.push(place);
+    } else if (place.type.toLowerCase() < node.category.toLowerCase()) {
       node.left = insert(node.left, place);
     } else {
       node.right = insert(node.right, place);
@@ -367,40 +369,40 @@ export function buildBST(places: Place[]): BSTNode | null {
 }
 
 /**
- * Step-by-step BST search by site Name (mirrors HeritageBST.search())
+ * Step-by-step BST browse by Category (mirrors HeritageBST.search_by_category())
  */
-export function solveBSTSearch(root: BSTNode | null, query: string): BSTStep[] {
+export function solveBSTBrowseCategory(root: BSTNode | null, category: string): BSTStep[] {
   const steps: BSTStep[] = [];
-  const target = query.trim().toLowerCase();
+  const target = category.trim().toLowerCase();
   const visited: string[] = [];
 
   steps.push({
     currentId: null,
     visitedIds: [],
-    description: `Start BST search for "${query}" at the root node.`,
+    description: `Start BST browse for category "${category}" at the root node.`,
   });
 
   let current = root;
   while (current) {
     visited.push(current.id);
-    const currentName = current.place.name.toLowerCase();
+    const currentCategory = current.category.toLowerCase();
 
-    if (target === currentName) {
+    if (target === currentCategory) {
       steps.push({
         currentId: current.id,
         visitedIds: [...visited],
-        description: `Match found! "${current.place.name}" equals the search key "${query}".`,
+        description: `Match found! Category "${current.category}" contains ${current.places.length} heritage site(s).`,
         comparison: 'found',
-        result: current.place,
+        result: current.places,
       });
       return steps;
     }
 
-    if (target < currentName) {
+    if (target < currentCategory) {
       steps.push({
         currentId: current.id,
         visitedIds: [...visited],
-        description: `"${query}" comes before "${current.place.name}" alphabetically. Move to the left subtree.`,
+        description: `"${category}" comes before "${current.category}" alphabetically. Move to the left subtree.`,
         comparison: 'left',
       });
       current = current.left;
@@ -408,7 +410,7 @@ export function solveBSTSearch(root: BSTNode | null, query: string): BSTStep[] {
       steps.push({
         currentId: current.id,
         visitedIds: [...visited],
-        description: `"${query}" comes after "${current.place.name}" alphabetically. Move to the right subtree.`,
+        description: `"${category}" comes after "${current.category}" alphabetically. Move to the right subtree.`,
         comparison: 'right',
       });
       current = current.right;
@@ -418,7 +420,7 @@ export function solveBSTSearch(root: BSTNode | null, query: string): BSTStep[] {
   steps.push({
     currentId: null,
     visitedIds: [...visited],
-    description: `Reached an empty subtree. "${query}" was not found in the tree.`,
+    description: `Reached an empty subtree. Category "${category}" was not found in the tree.`,
     comparison: 'none',
     result: null,
   });

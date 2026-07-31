@@ -6,8 +6,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { PLACES } from '../data/places';
-import { buildBST, solveBSTSearch } from '../utils/algorithms';
-import { BSTNode, BSTStep } from '../types';
+import { buildBST, solveBSTBrowseCategory } from '../utils/algorithms';
+import { BSTNode, BSTStep, PlaceType } from '../types';
 import {
   Play,
   Pause,
@@ -15,15 +15,23 @@ import {
   SkipBack,
   RotateCcw,
   GitCompare,
-  Search,
+  Tags,
   ClipboardList,
   Maximize2,
   Minimize2,
 } from 'lucide-react';
 
+const CATEGORIES: PlaceType[] = [
+  'Hindu Temple',
+  'Historical Monument',
+  'Main Temple',
+  'Monastery Temple',
+  'Mountain Temple',
+];
+
 // Recursively compute { x, y } coordinates for every node of the BST:
-// x follows in-order position (so the tree reads left-to-right alphabetically),
-// y follows depth level.
+// x follows in-order position (so the tree reads left-to-right alphabetically
+// by Category), y follows depth level.
 function computeLayout(root: BSTNode | null) {
   const positions: Record<string, { x: number; y: number }> = {};
   const connections: { from: string; to: string }[] = [];
@@ -62,7 +70,7 @@ export default function TreeVisualizer() {
   const bstRoot = useMemo(() => buildBST(PLACES), []);
   const { positions, connections } = useMemo(() => computeLayout(bstRoot), [bstRoot]);
 
-  const [query, setQuery] = useState<string>('Bayon');
+  const [category, setCategory] = useState<PlaceType>('Main Temple');
   const [steps, setSteps] = useState<BSTStep[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -70,16 +78,16 @@ export default function TreeVisualizer() {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const runOperation = (searchQuery: string) => {
+  const runOperation = (selectedCategory: string) => {
     stopPlayback();
-    const computedSteps = solveBSTSearch(bstRoot, searchQuery);
+    const computedSteps = solveBSTBrowseCategory(bstRoot, selectedCategory);
     setSteps(computedSteps);
     setCurrentStepIndex(0);
   };
 
   // Run once on mount with defaults
   useEffect(() => {
-    runOperation(query);
+    runOperation(category);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -140,7 +148,7 @@ export default function TreeVisualizer() {
   const isVisited = (nodeId: string) => currentStep?.visitedIds.includes(nodeId) || false;
   const isActive = (nodeId: string) => currentStep?.currentId === nodeId;
   const isResult = (nodeId: string) =>
-    currentStep?.comparison === 'found' && currentStep?.result?.id === nodeId;
+    currentStep?.comparison === 'found' && currentStep?.currentId === nodeId;
 
   const getNodeStyle = (nodeId: string) => {
     if (isResult(nodeId)) {
@@ -176,10 +184,10 @@ export default function TreeVisualizer() {
           <div>
             <h3 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
               <GitCompare className="w-4 h-4 text-emerald-600 animate-pulse" />
-              Binary Search Tree (ordered by Site Name)
+              Binary Search Tree (ordered by Category)
             </h3>
             <p className="text-xs text-slate-500">
-              Heritage sites indexed alphabetically for fast Search lookups
+              Heritage sites grouped by category for fast Browse lookups
             </p>
           </div>
           {/* Status dots */}
@@ -260,7 +268,7 @@ export default function TreeVisualizer() {
               const coords = positions[nodeId];
               const node = nodeById(nodeId);
               if (!node) return null;
-              const label = node.place.name;
+              const label = `${node.category} (${node.places.length})`;
 
               return (
                 <g key={nodeId} transform={`translate(${coords.x}, ${coords.y})`}>
@@ -292,30 +300,29 @@ export default function TreeVisualizer() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
-                  <Search className="w-3.5 h-3.5 text-indigo-600" />
-                  BST Search Controls
+                  <Tags className="w-3.5 h-3.5 text-indigo-600" />
+                  BST Browse Controls
                 </h4>
-                <p className="text-xs text-slate-500">Enter a site name and control step playback</p>
+                <p className="text-xs text-slate-500">Pick a category and control step playback</p>
               </div>
             </div>
 
-            {/* Search query input */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="e.g. Bayon, Ta Prohm, Kravan..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                disabled={isRunning}
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-700"
-              />
-              <button
-                onClick={() => runOperation(query)}
-                disabled={isRunning || !query.trim()}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs shadow-sm transition-all active:scale-95"
-              >
-                Run Search
-              </button>
+            {/* Category picker */}
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    setCategory(cat);
+                    runOperation(cat);
+                  }}
+                  disabled={isRunning}
+                  className={`px-3 py-1.5 rounded-lg font-semibold text-xs border transition-all duration-150
+                    ${category === cat ? 'bg-indigo-600 border-indigo-700 text-white shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50'}`}
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -402,7 +409,7 @@ export default function TreeVisualizer() {
           </div>
 
           <div className="border-t border-slate-800 pt-3 mt-4 flex justify-between items-center text-[10px] font-mono text-slate-500">
-            <span>Operation: SEARCH</span>
+            <span>Operation: BROWSE</span>
             <span>Comparisons: {currentStep?.visitedIds.length ?? 0}</span>
           </div>
         </div>
@@ -416,7 +423,7 @@ export default function TreeVisualizer() {
             Comparison Path (Root → Result)
           </h4>
           <p className="text-xs text-slate-500">
-            Each hop compares the target key against the current node and moves left (smaller) or right (larger),
+            Each hop compares the target category against the current node and moves left (smaller) or right (larger),
             just like <code className="text-[11px] bg-slate-100 px-1 rounded">HeritageBST</code> in the Python reference implementation.
           </p>
 
@@ -435,7 +442,7 @@ export default function TreeVisualizer() {
                       className={`font-mono text-xs px-2.5 py-1.5 rounded-lg shrink-0 border select-none
                         ${isLast && currentStep.comparison === 'found' ? 'bg-emerald-500 border-emerald-600 text-white font-bold' : isLast ? 'bg-amber-400 border-amber-500 text-slate-900 font-bold' : 'bg-slate-100 border-slate-200 text-slate-600'}`}
                     >
-                      {node?.place.name || id}
+                      {node?.category || id}
                     </motion.div>
                     {!isLast && <span className="text-slate-300 font-bold">&rarr;</span>}
                   </React.Fragment>
@@ -445,14 +452,20 @@ export default function TreeVisualizer() {
           </div>
 
           {currentStep.comparison === 'found' && currentStep.result && (
-            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-xs text-emerald-800">
-              <span className="font-bold">Result:</span> {currentStep.result.name} ({currentStep.result.type}) &middot;{' '}
-              {currentStep.result.openingHours}
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-xs text-emerald-800 space-y-1.5">
+              <span className="font-bold block">Temples in this category:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {currentStep.result.map((place) => (
+                  <span key={place.id} className="bg-white border border-emerald-200 rounded-lg px-2 py-1 font-mono text-[11px]">
+                    {place.name}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
           {currentStep.comparison === 'none' && (
             <div className="bg-red-50 border border-red-100 rounded-xl p-3 text-xs text-red-700">
-              No matching heritage site was found for this query.
+              No matching category was found for this query.
             </div>
           )}
         </div>

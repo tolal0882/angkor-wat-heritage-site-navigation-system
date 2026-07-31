@@ -49,12 +49,17 @@ export default function MapContainer({
     if (nodeId === startId) return 'bg-emerald-500 ring-4 ring-emerald-300 text-white';
     if (nodeId === endId) return 'bg-red-500 ring-4 ring-red-300 text-white';
 
+    // Confirmed shortest path (only populated once playback reaches the
+    // destination) takes priority, so intermediate waypoints lock in green
+    // in real time the moment the run finishes.
+    if (shortestPath.includes(nodeId)) {
+      return 'bg-emerald-400 ring-2 ring-emerald-200 text-slate-900';
+    }
+
     if (currentStep) {
       if (currentStep.currentNodeId === nodeId) return 'bg-amber-400 ring-4 ring-amber-200 text-slate-900 animate-pulseScale';
       if (currentStep.visited.includes(nodeId)) return 'bg-sky-400 ring-2 ring-sky-200 text-slate-900';
       if (currentStep.frontier.includes(nodeId)) return 'bg-indigo-400 ring-2 ring-indigo-200 text-white';
-    } else if (shortestPath.includes(nodeId)) {
-      return 'bg-emerald-400 ring-2 ring-emerald-200 text-slate-900';
     }
 
     const n = nodes.find((node) => node.id === nodeId);
@@ -107,20 +112,23 @@ export default function MapContainer({
       return false;
     };
 
-    if (currentStep && isStepPathEdge(edge.from, edge.to)) {
-      return {
-        stroke: '#fbbf24',
-        strokeWidth: 4,
-        strokeDasharray: 'none',
-      };
-    }
-
+    // Confirmed shortest path (only populated once playback reaches the
+    // destination) takes priority over the amber in-progress trace, so the
+    // route visibly "locks in" green in real time the moment the run finishes.
     if (isPathEdge(edge.from, edge.to)) {
       return {
         stroke: '#10b981',
         strokeWidth: 5,
         strokeDasharray: 'none',
         filter: 'drop-shadow(0 0 4px rgba(16, 185, 129, 0.5))',
+      };
+    }
+
+    if (currentStep && isStepPathEdge(edge.from, edge.to)) {
+      return {
+        stroke: '#fbbf24',
+        strokeWidth: 4,
+        strokeDasharray: 'none',
       };
     }
 

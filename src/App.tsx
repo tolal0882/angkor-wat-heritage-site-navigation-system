@@ -51,25 +51,19 @@ export default function App() {
   // Re-generate steps on endpoint, routing, algorithm, or edge constraint updates
   useEffect(() => {
     handleResetSimulation();
+    // Route line/directions are revealed later, in real time, once playback
+    // actually reaches the "destination reached" step (see effect below) -
+    // not instantly here, so the green route draws in sync with the run.
+    setShortestPath([]);
+    setDirections([]);
 
     if (algorithm === 'dijkstra') {
       if (startId && endId) {
         const resolvedSteps = solveDijkstra(nodes, edges, startId, endId);
         setSteps(resolvedSteps);
         setTraversalOrder([]);
-
-        // Calculate final path for instant evaluation
-        const finalStep = resolvedSteps[resolvedSteps.length - 1];
-        if (finalStep && finalStep.currentNodeId === endId) {
-          rebuildFinalPath(finalStep.previous);
-        } else {
-          setShortestPath([]);
-          setDirections([]);
-        }
       } else {
         setSteps([]);
-        setShortestPath([]);
-        setDirections([]);
         setTraversalOrder([]);
       }
     } else {
@@ -78,13 +72,9 @@ export default function App() {
         setSteps(resolvedSteps);
         const finalStep = resolvedSteps[resolvedSteps.length - 1];
         setTraversalOrder(finalStep?.visited ?? []);
-        setShortestPath([]);
-        setDirections([]);
       } else {
         setSteps([]);
         setTraversalOrder([]);
-        setShortestPath([]);
-        setDirections([]);
       }
     }
   }, [startId, endId, algorithm, edges]);
@@ -181,6 +171,22 @@ export default function App() {
     }
   };
 
+  // Reveal the green shortest-path route in real time: only once step
+  // playback actually lands on the "destination reached" step, not before.
+  // This keeps the route line in sync with Play/Step instead of appearing
+  // instantly the moment a start/end pair is chosen.
+  useEffect(() => {
+    if (algorithm !== 'dijkstra') return;
+    const step = steps[currentStepIndex];
+    if (step && step.currentNodeId === endId) {
+      rebuildFinalPath(step.previous);
+    } else {
+      setShortestPath([]);
+      setDirections([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStepIndex, steps, algorithm, endId]);
+
   // Toggle blocked road edges
   const handleToggleEdge = (edgeId: string) => {
     setEdges((prev) =>
@@ -215,7 +221,7 @@ export default function App() {
             <p className="text-xs md:text-sm text-slate-300 font-sans max-w-3xl leading-relaxed">
               An advanced interactive simulator combining three fundamental computer science structures:
               <strong className="text-amber-300 font-medium"> Hash Tables</strong> for high-speed indexing,
-              <strong className="text-amber-300 font-medium"> Binary Search Trees</strong> for Search lookups, and
+              <strong className="text-amber-300 font-medium"> Binary Search Trees</strong> for Browse-by-Category lookups, and
               <strong className="text-amber-300 font-medium"> Graph Theory</strong> with Dijkstra's, BFS & DFS routing.
             </p>
           </div>

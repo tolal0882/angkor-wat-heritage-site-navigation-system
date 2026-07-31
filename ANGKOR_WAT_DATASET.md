@@ -60,12 +60,12 @@ Full edge list (converted to meters) is in `src/data/graph.ts`.
 ## Data Structures & Algorithms Used
 
 1. **Hash Table** (`src/utils/algorithms.ts` - `buildHashTable`, `computeCustomHash`) -
-   O(1) average lookup of a heritage site by name via a polynomial ASCII hash
-   with chaining (13 buckets).
-2. **Binary Search Tree** (`buildBST`, `solveBSTSearch`) - sites are inserted
-   in dataset order and compared by lowercase Name. Only **Search** is
-   exposed as a user operation (no Insert/Delete UI), matching `HeritageBST`
-   in `Smart_Tour_Planning_System.py`.
+   O(1) average lookup of a heritage site by ID (e.g. `T01`) via a polynomial
+   ASCII hash with chaining (13 buckets).
+2. **Binary Search Tree** (`buildBST`, `solveBSTBrowseCategory`) - sites are
+   filed under their Category, and Category nodes are compared alphabetically.
+   Only **Browse by Category** is exposed as a user operation (no
+   Insert/Delete UI), matching `HeritageBST` in `Smart_Tour_Planning_System.py`.
 3. **Graph** (`solveDijkstra`, `solveGraphBFS`, `solveGraphDFS`) - the road
    network is modeled as a weighted, undirected adjacency list.
    - **Dijkstra's Algorithm** finds the shortest route (by distance) between

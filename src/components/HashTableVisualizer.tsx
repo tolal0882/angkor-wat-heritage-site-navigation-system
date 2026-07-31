@@ -34,32 +34,33 @@ export default function HashTableVisualizer() {
     setHashTable(buildHashTable(placesData));
   }, [placesData]);
 
-  // Execute hash lookup step-by-step
-  const handleSearch = async (queryName: string) => {
-    if (!queryName.trim()) return;
+  // Execute hash lookup step-by-step (keyed by Temple ID, e.g. "T01")
+  const handleSearch = async (queryId: string) => {
+    if (!queryId.trim()) return;
+    const normalizedId = queryId.trim().toUpperCase();
     setSearching(true);
     setFoundItem(null);
     setActiveBucketIndex(null);
     setActiveChainIndex(null);
-    
+
     const logs: string[] = [];
-    logs.push(`Initializing lookup for: "${queryName}"`);
+    logs.push(`Initializing lookup for ID: "${normalizedId}"`);
 
     // 1. Calculate custom hash
-    const { hashCode, index } = computeCustomHash(queryName);
-    
+    const { hashCode, index } = computeCustomHash(normalizedId);
+
     // Build breakdown visualizer mathematical log
     let breakDownStr = '';
-    for (let i = 0; i < Math.min(queryName.length, 6); i++) {
-      const ch = queryName[i];
-      const code = queryName.charCodeAt(i);
+    for (let i = 0; i < Math.min(normalizedId.length, 6); i++) {
+      const ch = normalizedId[i];
+      const code = normalizedId.charCodeAt(i);
       breakDownStr += `'${ch}'(${code}) * 31 * ${i + 1} + `;
     }
-    if (queryName.length > 6) breakDownStr += '...';
+    if (normalizedId.length > 6) breakDownStr += '...';
     else breakDownStr = breakDownStr.slice(0, -3);
 
     setFormulaLogs({
-      key: queryName,
+      key: normalizedId,
       charSum: breakDownStr,
       hashResult: hashCode,
       bucketIdx: index,
@@ -80,7 +81,7 @@ export default function HashTableVisualizer() {
     const bucket = hashTable[index];
     if (!bucket || bucket.items.length === 0) {
       await new Promise((r) => setTimeout(r, 600));
-      logs.push(`Result: Bucket [${index}] is empty. Key does not exist in Hash Table.`);
+      logs.push(`Result: Bucket [${index}] is empty. ID "${normalizedId}" does not exist in Hash Table.`);
       setTraceLog([...logs]);
       setSearching(false);
       return;
@@ -96,10 +97,10 @@ export default function HashTableVisualizer() {
       const item = bucket.items[i];
       await new Promise((r) => setTimeout(r, 700));
 
-      if (item.key.toLowerCase() === queryName.toLowerCase()) {
+      if (item.key.toUpperCase() === normalizedId) {
         matchFound = true;
         setFoundItem(item);
-        logs.push(`Match Found! Linked node [${i}] key: "${item.key}" matches search key: "${queryName}".`);
+        logs.push(`Match Found! Linked node [${i}] key: "${item.key}" (${item.value.name}) matches search ID: "${normalizedId}".`);
         logs.push(`Retrieved item data: "${item.value.description.slice(0, 70)}..."`);
         setTraceLog([...logs]);
         break;
@@ -110,25 +111,28 @@ export default function HashTableVisualizer() {
     }
 
     if (!matchFound) {
-      logs.push(`Result: Searched entire bucket chain. Key "${queryName}" is not registered.`);
+      logs.push(`Result: Searched entire bucket chain. ID "${normalizedId}" is not registered.`);
       setTraceLog([...logs]);
     }
 
     setSearching(false);
   };
 
-  // Add custom site
+  // Add custom site (auto-assigns the next sequential Temple ID)
   const handleInsert = () => {
     if (!insertName.trim()) return;
-    
+
     // Prevent duplicates
     if (placesData.some((p) => p.name.toLowerCase() === insertName.trim().toLowerCase())) {
       alert('This place name already exists!');
       return;
     }
 
+    const nextTempleId = `T${String(placesData.length + 1).padStart(2, '0')}`;
+
     const newPlace: Place = {
       id: `custom_${Date.now()}`,
+      templeId: nextTempleId,
       name: insertName.trim(),
       type: insertType,
       openingHours: '7:30 AM - 5:30 PM',
@@ -138,12 +142,11 @@ export default function HashTableVisualizer() {
     };
 
     setPlacesData([...placesData, newPlace]);
-    const { hashCode, index } = computeCustomHash(newPlace.name);
-    
+
     // Scroll and trigger search look up
     setInsertName('');
     setTimeout(() => {
-      handleSearch(newPlace.name);
+      handleSearch(newPlace.templeId);
     }, 150);
   };
 
@@ -168,14 +171,14 @@ export default function HashTableVisualizer() {
               O(1) Hash Probe Calculator
             </h3>
             <p className="text-xs text-slate-500">
-              Lookup any temple name instantly to trigger bucket tracing animations
+              Lookup any temple by ID (e.g. T01) instantly to trigger bucket tracing animations
             </p>
           </div>
 
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="e.g. Bayon Temple, Srah Srang..."
+              placeholder="e.g. T01, T03, T13..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               disabled={searching}
@@ -194,17 +197,17 @@ export default function HashTableVisualizer() {
           <div className="space-y-1.5">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Quick Probe Shortcuts</span>
             <div className="flex flex-wrap gap-1.5">
-              {['Angkor Wat', 'Bayon', 'Ta Prohm', 'Kravan', 'Thommanon'].map((name) => (
+              {placesData.slice(0, 14).filter((_, i) => [0, 2, 10, 12, 13].includes(i)).map((place) => (
                 <button
-                  key={name}
+                  key={place.templeId}
                   onClick={() => {
-                    setSearchQuery(name);
-                    handleSearch(name);
+                    setSearchQuery(place.templeId);
+                    handleSearch(place.templeId);
                   }}
                   disabled={searching}
                   className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-semibold font-sans px-2.5 py-1 rounded-lg border border-slate-200/50 transition-colors"
                 >
-                  {name}
+                  {place.templeId} · {place.name}
                 </button>
               ))}
             </div>
@@ -219,13 +222,13 @@ export default function HashTableVisualizer() {
               Insert Custom Chained Key
             </h3>
             <p className="text-xs text-slate-500">
-              Create a custom place. Insert duplicate hash indices to study chaining mechanics!
+              Create a custom place - it's auto-assigned the next Temple ID (used as the hash key).
             </p>
           </div>
 
           <div className="space-y-3">
             <div>
-              <label className="text-[10px] text-slate-400 block mb-1">Place / Key Name</label>
+              <label className="text-[10px] text-slate-400 block mb-1">Place Name</label>
               <input
                 type="text"
                 placeholder="e.g. Preah Vihear, Phnom Bakheng..."
@@ -399,7 +402,7 @@ export default function HashTableVisualizer() {
                                 }`}
                             >
                               <div className="flex flex-col">
-                                <span className="text-[9px] opacity-70">Key: "{item.key}"</span>
+                                <span className="text-[9px] opacity-70">Key: "{item.key}" ({item.value.name})</span>
                                 <span className="text-[8px] font-bold opacity-60">Hash: {item.hashCode}</span>
                               </div>
                             </motion.div>
@@ -470,7 +473,7 @@ export default function HashTableVisualizer() {
                                   : 'bg-slate-800/80 border-slate-700 text-slate-300'
                               }`}
                             >
-                              <span className="truncate">"{item.key}"</span>
+                              <span className="truncate">"{item.key}" {item.value.name}</span>
                               <span className="text-[8px] opacity-70 shrink-0">#{item.hashCode}</span>
                             </div>
                           );
@@ -553,7 +556,7 @@ export default function HashTableVisualizer() {
                                     : 'bg-white border-slate-200 text-slate-700'
                                 }`}
                               >
-                                <span className="truncate">{item.key}</span>
+                                <span className="truncate">{item.key} · {item.value.name}</span>
                                 <span className="text-[9px] font-mono opacity-75 shrink-0 ml-1">h:{item.hashCode}</span>
                               </div>
                             );
