@@ -318,6 +318,8 @@ export function computeCustomHash(key: string): { hashCode: number; index: numbe
   return { hashCode, index };
 }
 
+// Keys are hashed case-insensitively (uppercased) so a search for "t01" or
+// "bayon" lands in the same bucket as the stored key, regardless of casing.
 export function buildHashTable(places: Place[]): HashBucket[] {
   const table: HashBucket[] = Array.from({ length: HASH_TABLE_CAPACITY }, (_, index) => ({
     index,
@@ -325,11 +327,21 @@ export function buildHashTable(places: Place[]): HashBucket[] {
   }));
 
   places.forEach((place) => {
-    const { hashCode, index } = computeCustomHash(place.templeId);
-    table[index].items.push({
+    // Every site is hashed under BOTH its Temple ID and its Name, so either
+    // one can be used to look it up - mirrors HashTable.__init__() in
+    // Smart_Tour_Planning_System.py, which now indexes by ID and Name.
+    const { hashCode: idHash, index: idIndex } = computeCustomHash(place.templeId.toUpperCase());
+    table[idIndex].items.push({
       key: place.templeId,
       value: place,
-      hashCode,
+      hashCode: idHash,
+    });
+
+    const { hashCode: nameHash, index: nameIndex } = computeCustomHash(place.name.toUpperCase());
+    table[nameIndex].items.push({
+      key: place.name,
+      value: place,
+      hashCode: nameHash,
     });
   });
 

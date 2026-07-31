@@ -34,33 +34,34 @@ export default function HashTableVisualizer() {
     setHashTable(buildHashTable(placesData));
   }, [placesData]);
 
-  // Execute hash lookup step-by-step (keyed by Temple ID, e.g. "T01")
-  const handleSearch = async (queryId: string) => {
-    if (!queryId.trim()) return;
-    const normalizedId = queryId.trim().toUpperCase();
+  // Execute hash lookup step-by-step. Every site is hashed under BOTH its
+  // Temple ID (e.g. "T01") and its Name, so either one resolves here.
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) return;
+    const normalizedQuery = query.trim().toUpperCase();
     setSearching(true);
     setFoundItem(null);
     setActiveBucketIndex(null);
     setActiveChainIndex(null);
 
     const logs: string[] = [];
-    logs.push(`Initializing lookup for ID: "${normalizedId}"`);
+    logs.push(`Initializing lookup for: "${query.trim()}"`);
 
     // 1. Calculate custom hash
-    const { hashCode, index } = computeCustomHash(normalizedId);
+    const { hashCode, index } = computeCustomHash(normalizedQuery);
 
     // Build breakdown visualizer mathematical log
     let breakDownStr = '';
-    for (let i = 0; i < Math.min(normalizedId.length, 6); i++) {
-      const ch = normalizedId[i];
-      const code = normalizedId.charCodeAt(i);
+    for (let i = 0; i < Math.min(normalizedQuery.length, 6); i++) {
+      const ch = normalizedQuery[i];
+      const code = normalizedQuery.charCodeAt(i);
       breakDownStr += `'${ch}'(${code}) * 31 * ${i + 1} + `;
     }
-    if (normalizedId.length > 6) breakDownStr += '...';
+    if (normalizedQuery.length > 6) breakDownStr += '...';
     else breakDownStr = breakDownStr.slice(0, -3);
 
     setFormulaLogs({
-      key: normalizedId,
+      key: normalizedQuery,
       charSum: breakDownStr,
       hashResult: hashCode,
       bucketIdx: index,
@@ -81,7 +82,7 @@ export default function HashTableVisualizer() {
     const bucket = hashTable[index];
     if (!bucket || bucket.items.length === 0) {
       await new Promise((r) => setTimeout(r, 600));
-      logs.push(`Result: Bucket [${index}] is empty. ID "${normalizedId}" does not exist in Hash Table.`);
+      logs.push(`Result: Bucket [${index}] is empty. "${query.trim()}" does not exist in Hash Table.`);
       setTraceLog([...logs]);
       setSearching(false);
       return;
@@ -97,10 +98,10 @@ export default function HashTableVisualizer() {
       const item = bucket.items[i];
       await new Promise((r) => setTimeout(r, 700));
 
-      if (item.key.toUpperCase() === normalizedId) {
+      if (item.key.toUpperCase() === normalizedQuery) {
         matchFound = true;
         setFoundItem(item);
-        logs.push(`Match Found! Linked node [${i}] key: "${item.key}" (${item.value.name}) matches search ID: "${normalizedId}".`);
+        logs.push(`Match Found! Linked node [${i}] key: "${item.key}" (${item.value.name}) matches search query: "${query.trim()}".`);
         logs.push(`Retrieved item data: "${item.value.description.slice(0, 70)}..."`);
         setTraceLog([...logs]);
         break;
@@ -111,7 +112,7 @@ export default function HashTableVisualizer() {
     }
 
     if (!matchFound) {
-      logs.push(`Result: Searched entire bucket chain. ID "${normalizedId}" is not registered.`);
+      logs.push(`Result: Searched entire bucket chain. "${query.trim()}" is not registered.`);
       setTraceLog([...logs]);
     }
 
@@ -171,14 +172,14 @@ export default function HashTableVisualizer() {
               O(1) Hash Probe Calculator
             </h3>
             <p className="text-xs text-slate-500">
-              Lookup any temple by ID (e.g. T01) instantly to trigger bucket tracing animations
+              Lookup any temple by ID (e.g. T01) or by Name instantly to trigger bucket tracing animations
             </p>
           </div>
 
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="e.g. T01, T03, T13..."
+              placeholder="e.g. T01, Bayon, Kravan..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               disabled={searching}

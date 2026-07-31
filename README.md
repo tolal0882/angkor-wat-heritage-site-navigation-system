@@ -15,8 +15,8 @@ same project.
   - **DFS** - depth-first exploration from a chosen starting site.
 - **Binary Search Tree** - sites indexed alphabetically by Category, supporting
   **Browse by Category**.
-- **Hash Table** - O(1) average lookup of a heritage site by ID (e.g. `T01`),
-  with a visualized chaining/collision model.
+- **Hash Table** - O(1) average lookup of a heritage site by ID (e.g. `T01`)
+  or by Name, with a visualized chaining/collision model.
 
 See [ANGKOR_WAT_DATASET.md](ANGKOR_WAT_DATASET.md) for the full dataset and
 road network.

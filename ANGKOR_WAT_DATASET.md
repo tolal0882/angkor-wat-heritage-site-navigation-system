@@ -60,8 +60,9 @@ Full edge list (converted to meters) is in `src/data/graph.ts`.
 ## Data Structures & Algorithms Used
 
 1. **Hash Table** (`src/utils/algorithms.ts` - `buildHashTable`, `computeCustomHash`) -
-   O(1) average lookup of a heritage site by ID (e.g. `T01`) via a polynomial
-   ASCII hash with chaining (13 buckets).
+   O(1) average lookup of a heritage site by ID (e.g. `T01`) or by Name, via a
+   polynomial ASCII hash with chaining (13 buckets). Each site is hashed under
+   both keys, matching `HashTable.__init__()` in `Smart_Tour_Planning_System.py`.
 2. **Binary Search Tree** (`buildBST`, `solveBSTBrowseCategory`) - sites are
    filed under their Category, and Category nodes are compared alphabetically.
    Only **Browse by Category** is exposed as a user operation (no
