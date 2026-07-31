@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { PLACES } from '../data/places';
 import { buildBST, solveBSTBrowseCategory } from '../utils/algorithms';
-import { BSTNode, BSTStep, PlaceType } from '../types';
+import { BSTNode, BSTStep, Place, PlaceType } from '../types';
 import {
   Play,
   Pause,
@@ -21,6 +21,7 @@ import {
   Minimize2,
 } from 'lucide-react';
 
+// Alphabetical order, used for the category picker buttons
 const CATEGORIES: PlaceType[] = [
   'Hindu Temple',
   'Historical Monument',
@@ -29,46 +30,70 @@ const CATEGORIES: PlaceType[] = [
   'Mountain Temple',
 ];
 
-// Recursively compute { x, y } coordinates for every node of the BST:
-// x follows in-order position (so the tree reads left-to-right alphabetically
-// by Category), y follows depth level.
-function computeLayout(root: BSTNode | null) {
+// Left-to-right order for the tree diagram, matching the reference chart
+// (Tree Algorithms/Tree.png): Main -> Mountain -> Hindu -> Monastery -> Historical
+const CATEGORY_ORDER: PlaceType[] = [
+  'Main Temple',
+  'Mountain Temple',
+  'Hindu Temple',
+  'Monastery Temple',
+  'Historical Monument',
+];
+
+// Default (unexplored) colors per category, matching the reference chart's palette
+const CATEGORY_STYLES: Record<PlaceType, { node: string; leaf: string }> = {
+  'Main Temple': { node: 'bg-sky-100 border-sky-400 text-sky-900', leaf: 'bg-sky-50 border-sky-300 text-sky-800' },
+  'Mountain Temple': { node: 'bg-lime-100 border-lime-400 text-lime-900', leaf: 'bg-lime-50 border-lime-300 text-lime-800' },
+  'Hindu Temple': { node: 'bg-slate-200 border-slate-400 text-slate-900', leaf: 'bg-slate-100 border-slate-300 text-slate-700' },
+  'Monastery Temple': { node: 'bg-cyan-300 border-cyan-500 text-cyan-950', leaf: 'bg-cyan-100 border-cyan-400 text-cyan-900' },
+  'Historical Monument': { node: 'bg-orange-100 border-orange-400 text-orange-900', leaf: 'bg-orange-50 border-orange-300 text-orange-800' },
+};
+
+const LEAF_WIDTH = 150;
+const CATEGORY_MIN_WIDTH = 160;
+const ROOT_Y = 40;
+const CATEGORY_Y = 180;
+const LEAF_Y = 320;
+
+// Lays out a fixed 3-level hierarchy diagram - root -> category -> sites -
+// matching Tree Algorithms/Tree.png, rather than a binary left/right shape.
+// Category slot widths scale with how many sites they hold, so wider
+// categories (e.g. Historical Monument) naturally span more space.
+function computeCategoryTreeLayout(places: Place[]) {
   const positions: Record<string, { x: number; y: number }> = {};
   const connections: { from: string; to: string }[] = [];
-  let order = 0;
-  let maxDepth = 0;
 
-  const walk = (node: BSTNode | null, depth: number) => {
-    if (!node) return;
-    walk(node.left, depth + 1);
-    if (node.left) connections.push({ from: node.id, to: node.left.id });
+  const catWidths = CATEGORY_ORDER.map((cat) =>
+    Math.max(places.filter((p) => p.type === cat).length * LEAF_WIDTH, CATEGORY_MIN_WIDTH)
+  );
+  const totalWidth = catWidths.reduce((a, b) => a + b, 0);
 
-    positions[node.id] = { x: order, y: depth };
-    order += 1;
-    maxDepth = Math.max(maxDepth, depth);
+  let cursor = 0;
+  CATEGORY_ORDER.forEach((cat, ci) => {
+    const w = catWidths[ci];
+    positions[cat] = { x: cursor + w / 2, y: CATEGORY_Y };
+    connections.push({ from: 'root', to: cat });
 
-    if (node.right) connections.push({ from: node.id, to: node.right.id });
-    walk(node.right, depth + 1);
-  };
+    const sites = places.filter((p) => p.type === cat);
+    sites.forEach((site, si) => {
+      positions[site.id] = { x: cursor + LEAF_WIDTH * si + LEAF_WIDTH / 2, y: LEAF_Y };
+      connections.push({ from: cat, to: site.id });
+    });
 
-  walk(root, 0);
-
-  const totalNodes = Math.max(order, 1);
-  const verticalSpacing = Math.min(620 / Math.max(maxDepth, 1), 130);
-  const scaled: Record<string, { x: number; y: number }> = {};
-  Object.entries(positions).forEach(([id, pos]) => {
-    scaled[id] = {
-      x: 60 + (pos.x / Math.max(totalNodes - 1, 1)) * 900,
-      y: 50 + pos.y * verticalSpacing,
-    };
+    cursor += w;
   });
 
-  return { positions: scaled, connections, maxDepth };
+  positions.root = { x: totalWidth / 2, y: ROOT_Y };
+
+  return { positions, connections, width: totalWidth, height: LEAF_Y + 70 };
 }
 
 export default function TreeVisualizer() {
+  // The BST (built/searched exactly like HeritageBST in the Python reference)
+  // still drives the Browse-by-Category algorithm and its step trace -
+  // only the on-screen layout below is the fixed hierarchy diagram.
   const bstRoot = useMemo(() => buildBST(PLACES), []);
-  const { positions, connections } = useMemo(() => computeLayout(bstRoot), [bstRoot]);
+  const { positions, connections, width, height } = useMemo(() => computeCategoryTreeLayout(PLACES), []);
 
   const [category, setCategory] = useState<PlaceType>('Main Temple');
   const [steps, setSteps] = useState<BSTStep[]>([]);
@@ -149,18 +174,27 @@ export default function TreeVisualizer() {
   const isActive = (nodeId: string) => currentStep?.currentId === nodeId;
   const isResult = (nodeId: string) =>
     currentStep?.comparison === 'found' && currentStep?.currentId === nodeId;
+  const isLeafResult = (placeId: string) =>
+    currentStep?.comparison === 'found' && (currentStep?.result?.some((p) => p.id === placeId) ?? false);
 
-  const getNodeStyle = (nodeId: string) => {
-    if (isResult(nodeId)) {
+  const getCategoryStyle = (cat: PlaceType) => {
+    if (isResult(cat)) {
       return 'bg-emerald-500 border-emerald-600 text-white ring-4 ring-emerald-200 font-bold';
     }
-    if (isActive(nodeId)) {
+    if (isActive(cat)) {
       return 'bg-amber-400 border-amber-500 text-slate-900 ring-4 ring-amber-200 font-bold';
     }
-    if (isVisited(nodeId)) {
+    if (isVisited(cat)) {
       return 'bg-sky-500 border-sky-600 text-white font-medium';
     }
-    return 'bg-white border-slate-200 text-slate-600';
+    return `${CATEGORY_STYLES[cat].node} font-semibold`;
+  };
+
+  const getLeafStyle = (place: Place) => {
+    if (isLeafResult(place.id)) {
+      return 'bg-emerald-400 border-emerald-500 text-emerald-950 font-semibold ring-2 ring-emerald-200';
+    }
+    return CATEGORY_STYLES[place.type].leaf;
   };
 
   const nodeById = (nodeId: string): BSTNode | null => {
@@ -174,7 +208,7 @@ export default function TreeVisualizer() {
 
   return (
     <div className="space-y-6">
-      {/* Visual Canvas of the Binary Search Tree */}
+      {/* Visual Canvas of the Heritage Site Tree */}
       <div
         className={`bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col ${
           isExpanded ? 'lg:h-[800px] md:h-[680px] h-[550px]' : 'lg:h-[520px] md:h-[460px] h-[380px]'
@@ -184,7 +218,7 @@ export default function TreeVisualizer() {
           <div>
             <h3 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
               <GitCompare className="w-4 h-4 text-emerald-600 animate-pulse" />
-              Binary Search Tree (ordered by Category)
+              Angkor Heritage Site Tree (Root → Category → Site)
             </h3>
             <p className="text-xs text-slate-500">
               Heritage sites grouped by category for fast Browse lookups
@@ -231,8 +265,9 @@ export default function TreeVisualizer() {
         {/* Tree Render Block */}
         <div className="flex-1 bg-slate-50 rounded-xl relative overflow-auto border border-slate-100">
           <svg
-            className={`w-[1020px] ${isExpanded ? 'h-[690px]' : 'h-[410px]'} mx-auto block select-none pointer-events-none transition-all duration-300`}
-            viewBox={`0 0 1020 ${isExpanded ? 690 : 410}`}
+            className={`${isExpanded ? 'h-[690px]' : 'h-[410px]'} mx-auto block select-none pointer-events-none transition-all duration-300`}
+            style={{ width: Math.max(width, 1020) }}
+            viewBox={`0 0 ${width} ${height}`}
           >
             {/* Draw Elegant Curved Connector Lines */}
             {connections.map((c, i) => {
@@ -243,8 +278,19 @@ export default function TreeVisualizer() {
               let strokeColor = '#e2e8f0'; // default slate-200
               let strokeWidth = 1.5;
 
-              if (isVisited(c.from) && isVisited(c.to)) {
-                strokeColor = '#38bdf8'; // sky-400
+              if (c.from === 'root') {
+                if (isResult(c.to)) {
+                  strokeColor = '#10b981'; // emerald-500
+                  strokeWidth = 3;
+                } else if (isActive(c.to)) {
+                  strokeColor = '#fbbf24'; // amber-400
+                  strokeWidth = 2.5;
+                } else if (isVisited(c.to)) {
+                  strokeColor = '#38bdf8'; // sky-400
+                  strokeWidth = 2.5;
+                }
+              } else if (isLeafResult(c.to)) {
+                strokeColor = '#10b981'; // emerald-500
                 strokeWidth = 2.5;
               }
 
@@ -263,26 +309,57 @@ export default function TreeVisualizer() {
               );
             })}
 
-            {/* Draw Tree Node circles/bubbles */}
-            {Object.keys(positions).map((nodeId) => {
-              const coords = positions[nodeId];
-              const node = nodeById(nodeId);
-              if (!node) return null;
-              const label = `${node.category} (${node.places.length})`;
+            {/* Root node: "Angkor Heritage Site" */}
+            <g transform={`translate(${positions.root.x}, ${positions.root.y})`}>
+              <foreignObject x="-100" y="-18" width="200" height="36" className="overflow-visible">
+                <div className="w-[200px] h-[34px] rounded-lg border-2 bg-indigo-50 border-indigo-300 text-indigo-900 flex items-center justify-center text-center px-2 font-sans font-bold text-[11px] shadow-sm select-none">
+                  Angkor Heritage Site
+                </div>
+              </foreignObject>
+            </g>
+
+            {/* Category nodes */}
+            {CATEGORY_ORDER.map((cat) => {
+              const coords = positions[cat];
+              const node = nodeById(cat);
+              const count = node?.places.length ?? PLACES.filter((p) => p.type === cat).length;
+              const label = `${cat} (${count})`;
 
               return (
-                <g key={nodeId} transform={`translate(${coords.x}, ${coords.y})`}>
-                  {(isActive(nodeId) || isResult(nodeId)) && (
-                    <circle r="25" fill="none" stroke="#fbbf24" strokeWidth="2" className="animate-pingSlow" />
+                <g key={cat} transform={`translate(${coords.x}, ${coords.y})`}>
+                  {(isActive(cat) || isResult(cat)) && (
+                    <circle r="27" fill="none" stroke="#fbbf24" strokeWidth="2" className="animate-pingSlow" />
                   )}
-
-                  <foreignObject x="-60" y="-15" width="120" height="32" className="overflow-visible">
+                  <foreignObject x="-65" y="-17" width="130" height="34" className="overflow-visible">
                     <div
-                      className={`w-[120px] h-[30px] rounded-lg border text-[10px] flex items-center justify-center text-center px-1 font-sans transition-all duration-300 leading-tight shadow-sm select-none
-                        ${getNodeStyle(nodeId)}`}
+                      className={`w-[130px] h-[32px] rounded-lg border-2 text-[10px] flex items-center justify-center text-center px-1 font-sans transition-all duration-300 leading-tight shadow-sm select-none
+                        ${getCategoryStyle(cat)}`}
                       title={label}
                     >
-                      {label.length > 22 ? `${label.slice(0, 19)}...` : label}
+                      {label}
+                    </div>
+                  </foreignObject>
+                </g>
+              );
+            })}
+
+            {/* Leaf nodes: individual heritage sites */}
+            {PLACES.map((place) => {
+              const coords = positions[place.id];
+              if (!coords) return null;
+
+              return (
+                <g key={place.id} transform={`translate(${coords.x}, ${coords.y})`}>
+                  {isLeafResult(place.id) && (
+                    <circle r="24" fill="none" stroke="#34d399" strokeWidth="2" className="animate-pingSlow" />
+                  )}
+                  <foreignObject x="-62" y="-15" width="124" height="30" className="overflow-visible">
+                    <div
+                      className={`w-[124px] h-[28px] rounded-md border text-[9.5px] flex items-center justify-center text-center px-1 font-sans transition-all duration-300 leading-tight shadow-sm select-none
+                        ${getLeafStyle(place)}`}
+                      title={place.name}
+                    >
+                      {place.name.length > 20 ? `${place.name.slice(0, 17)}...` : place.name}
                     </div>
                   </foreignObject>
                 </g>
