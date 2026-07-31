@@ -6,8 +6,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { PLACES } from '../data/places';
-import { buildBST, solveBSTSearch, solveBSTFindMin, solveBSTFindMax, solveBSTPreorder } from '../utils/algorithms';
-import { BSTNode, BSTStep, BSTOperation } from '../types';
+import { buildBST, solveBSTSearch } from '../utils/algorithms';
+import { BSTNode, BSTStep } from '../types';
 import {
   Play,
   Pause,
@@ -16,9 +16,6 @@ import {
   RotateCcw,
   GitCompare,
   Search,
-  ArrowDownToLine,
-  ArrowUpToLine,
-  ListOrdered,
   ClipboardList,
   Maximize2,
   Minimize2,
@@ -65,7 +62,6 @@ export default function TreeVisualizer() {
   const bstRoot = useMemo(() => buildBST(PLACES), []);
   const { positions, connections } = useMemo(() => computeLayout(bstRoot), [bstRoot]);
 
-  const [operation, setOperation] = useState<BSTOperation>('search');
   const [query, setQuery] = useState<string>('Bayon');
   const [steps, setSteps] = useState<BSTStep[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
@@ -74,25 +70,16 @@ export default function TreeVisualizer() {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const runOperation = (op: BSTOperation, searchQuery: string) => {
+  const runOperation = (searchQuery: string) => {
     stopPlayback();
-    let computedSteps: BSTStep[] = [];
-    if (op === 'search') {
-      computedSteps = solveBSTSearch(bstRoot, searchQuery);
-    } else if (op === 'min') {
-      computedSteps = solveBSTFindMin(bstRoot);
-    } else if (op === 'max') {
-      computedSteps = solveBSTFindMax(bstRoot);
-    } else {
-      computedSteps = solveBSTPreorder(bstRoot);
-    }
+    const computedSteps = solveBSTSearch(bstRoot, searchQuery);
     setSteps(computedSteps);
     setCurrentStepIndex(0);
   };
 
   // Run once on mount with defaults
   useEffect(() => {
-    runOperation('search', query);
+    runOperation(query);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -192,7 +179,7 @@ export default function TreeVisualizer() {
               Binary Search Tree (ordered by Site Name)
             </h3>
             <p className="text-xs text-slate-500">
-              Heritage sites indexed alphabetically for fast Search, Find-Min & Find-Max lookups
+              Heritage sites indexed alphabetically for fast Search lookups
             </p>
           </div>
           {/* Status dots */}
@@ -304,83 +291,32 @@ export default function TreeVisualizer() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
-                <h4 className="font-bold text-slate-800 text-sm">BST Operation Controls</h4>
-                <p className="text-xs text-slate-500">Pick an operation and control step playback</p>
-              </div>
-
-              {/* Segmented Operation selectors */}
-              <div className="bg-slate-100 p-1 rounded-xl flex gap-1 w-full md:w-auto">
-                <button
-                  onClick={() => {
-                    setOperation('search');
-                    runOperation('search', query);
-                  }}
-                  disabled={isRunning}
-                  className={`flex items-center gap-1 py-1.5 px-3 rounded-lg font-semibold text-xs transition-all duration-150
-                    ${operation === 'search' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800 disabled:opacity-50'}`}
-                >
-                  <Search className="w-3.5 h-3.5" />
-                  Search
-                </button>
-                <button
-                  onClick={() => {
-                    setOperation('min');
-                    runOperation('min', query);
-                  }}
-                  disabled={isRunning}
-                  className={`flex items-center gap-1 py-1.5 px-3 rounded-lg font-semibold text-xs transition-all duration-150
-                    ${operation === 'min' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800 disabled:opacity-50'}`}
-                >
-                  <ArrowDownToLine className="w-3.5 h-3.5" />
-                  Find Min
-                </button>
-                <button
-                  onClick={() => {
-                    setOperation('max');
-                    runOperation('max', query);
-                  }}
-                  disabled={isRunning}
-                  className={`flex items-center gap-1 py-1.5 px-3 rounded-lg font-semibold text-xs transition-all duration-150
-                    ${operation === 'max' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800 disabled:opacity-50'}`}
-                >
-                  <ArrowUpToLine className="w-3.5 h-3.5" />
-                  Find Max
-                </button>
-                <button
-                  onClick={() => {
-                    setOperation('preorder');
-                    runOperation('preorder', query);
-                  }}
-                  disabled={isRunning}
-                  className={`flex items-center gap-1 py-1.5 px-3 rounded-lg font-semibold text-xs transition-all duration-150
-                    ${operation === 'preorder' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800 disabled:opacity-50'}`}
-                >
-                  <ListOrdered className="w-3.5 h-3.5" />
-                  Preorder
-                </button>
+                <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                  <Search className="w-3.5 h-3.5 text-indigo-600" />
+                  BST Search Controls
+                </h4>
+                <p className="text-xs text-slate-500">Enter a site name and control step playback</p>
               </div>
             </div>
 
-            {/* Search query input (only relevant for Search) */}
-            {operation === 'search' && (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="e.g. Bayon, Ta Prohm, Kravan..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  disabled={isRunning}
-                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-700"
-                />
-                <button
-                  onClick={() => runOperation('search', query)}
-                  disabled={isRunning || !query.trim()}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs shadow-sm transition-all active:scale-95"
-                >
-                  Run Search
-                </button>
-              </div>
-            )}
+            {/* Search query input */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="e.g. Bayon, Ta Prohm, Kravan..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                disabled={isRunning}
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-700"
+              />
+              <button
+                onClick={() => runOperation(query)}
+                disabled={isRunning || !query.trim()}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs shadow-sm transition-all active:scale-95"
+              >
+                Run Search
+              </button>
+            </div>
           </div>
 
           {/* Buttons */}
@@ -466,7 +402,7 @@ export default function TreeVisualizer() {
           </div>
 
           <div className="border-t border-slate-800 pt-3 mt-4 flex justify-between items-center text-[10px] font-mono text-slate-500">
-            <span>Operation: {operation.toUpperCase()}</span>
+            <span>Operation: SEARCH</span>
             <span>Comparisons: {currentStep?.visitedIds.length ?? 0}</span>
           </div>
         </div>
@@ -477,27 +413,16 @@ export default function TreeVisualizer() {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
           <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
             <GitCompare className="w-4 h-4 text-indigo-600" />
-            {operation === 'preorder' ? 'Preorder Visit Order (Root → Left → Right)' : 'Comparison Path (Root → Result)'}
+            Comparison Path (Root → Result)
           </h4>
           <p className="text-xs text-slate-500">
-            {operation === 'preorder' ? (
-              <>
-                Each node is visited before its children, recursing left before right, just like{' '}
-                <code className="text-[11px] bg-slate-100 px-1 rounded">HeritageBST.preorder()</code> in the Python reference implementation.
-              </>
-            ) : (
-              <>
-                Each hop compares the target key against the current node and moves left (smaller) or right (larger),
-                just like <code className="text-[11px] bg-slate-100 px-1 rounded">HeritageBST</code> in the Python reference implementation.
-              </>
-            )}
+            Each hop compares the target key against the current node and moves left (smaller) or right (larger),
+            just like <code className="text-[11px] bg-slate-100 px-1 rounded">HeritageBST</code> in the Python reference implementation.
           </p>
 
           <div className="flex flex-wrap items-center gap-2">
             {currentStep.visitedIds.length === 0 ? (
-              <span className="text-xs text-slate-400 font-mono italic">
-                {operation === 'preorder' ? 'No sites visited yet' : 'No comparisons yet'}
-              </span>
+              <span className="text-xs text-slate-400 font-mono italic">No comparisons yet</span>
             ) : (
               currentStep.visitedIds.map((id, idx) => {
                 const node = nodeById(id);

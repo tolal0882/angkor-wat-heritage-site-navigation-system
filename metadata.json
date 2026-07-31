@@ -1,4 +1,4 @@
 {
   "name": "Angkor Wat Heritage Site Navigation System",
-  "description": "An interactive data structures and algorithms visualizer for the Angkor Wat Archaeological Park, covering graph routing (Dijkstra/BFS/DFS), a Binary Search Tree (Search/Find-Min/Find-Max/Preorder), and hash table lookups over the canonical 14-site heritage dataset."
+  "description": "An interactive data structures and algorithms visualizer for the Angkor Wat Archaeological Park, covering graph routing (Dijkstra/BFS/DFS), a Binary Search Tree (Search), and hash table lookups over the canonical 14-site heritage dataset."
 }

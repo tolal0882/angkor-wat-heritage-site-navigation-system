@@ -14,7 +14,7 @@ same project.
   - **BFS** - level-by-level exploration from a chosen starting site.
   - **DFS** - depth-first exploration from a chosen starting site.
 - **Binary Search Tree** - sites indexed alphabetically by name, supporting
-  **Search**, **Find-Min**, **Find-Max**, and **Preorder Traversal**.
+  **Search**.
 - **Hash Table** - O(1) average lookup of a heritage site by name, with a
   visualized chaining/collision model.
 
