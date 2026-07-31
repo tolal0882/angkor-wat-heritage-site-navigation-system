@@ -13,21 +13,14 @@ import { solveDijkstra, solveGraphBFS, solveGraphDFS } from './utils/algorithms'
 // Components
 import MapContainer from './components/MapContainer';
 import AlgorithmControls from './components/AlgorithmControls';
-import TreeVisualizer from './components/TreeVisualizer';
-import HashTableVisualizer from './components/HashTableVisualizer';
 
 // Icons
 import {
-  Compass,
-  Network,
-  Hash,
   BookOpen,
   Workflow,
 } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'navigation' | 'tree' | 'hash_table'>('navigation');
-
   // Graph state (allows toggling blocked status of road connections)
   const [edges, setEdges] = useState<GraphEdge[]>(INITIAL_EDGES);
   const [nodes] = useState<GraphNode[]>(GRAPH_NODES);
@@ -219,10 +212,9 @@ export default function App() {
               Angkor Wat Heritage Site Navigation System
             </h1>
             <p className="text-xs md:text-sm text-slate-300 font-sans max-w-3xl leading-relaxed">
-              An advanced interactive simulator combining three fundamental computer science structures:
-              <strong className="text-amber-300 font-medium"> Hash Tables</strong> for high-speed indexing,
-              <strong className="text-amber-300 font-medium"> Binary Search Trees</strong> for Browse-by-Category lookups, and
-              <strong className="text-amber-300 font-medium"> Graph Theory</strong> with Dijkstra's, BFS & DFS routing.
+              An advanced interactive simulator built around
+              <strong className="text-amber-300 font-medium"> Graph Theory</strong>, with Dijkstra's shortest
+              path, BFS, and DFS routing across the archaeological park's road network.
             </p>
           </div>
 
@@ -237,63 +229,13 @@ export default function App() {
               <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider mb-1">Graph Edges</span>
               <span className="font-mono font-bold text-amber-400 text-base">{edges.length} Roads</span>
             </div>
-            <div className="border-l border-slate-700" />
-            <div className="text-center">
-              <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider mb-1">Hash Capacity</span>
-              <span className="font-mono font-bold text-amber-400 text-base">13 Buckets</span>
-            </div>
           </div>
         </div>
       </header>
 
-      {/* 2. Unified Navigation Tabs */}
-      <nav className="max-w-7xl mx-auto w-full px-6 mt-6">
-        <div className="bg-white/70 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col sm:flex-row gap-1.5">
-          <button
-            onClick={() => setActiveTab('navigation')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold transition-all duration-200
-              ${
-                activeTab === 'navigation'
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-          >
-            <Compass className={`w-4 h-4 ${activeTab === 'navigation' ? 'text-amber-400' : 'text-slate-500'}`} />
-            Site Transit Map (Graph Routing)
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('tree')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold transition-all duration-200
-              ${
-                activeTab === 'tree'
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-          >
-            <Network className={`w-4 h-4 ${activeTab === 'tree' ? 'text-amber-400' : 'text-slate-500'}`} />
-            Site Directory (Binary Search Tree)
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('hash_table')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold transition-all duration-200
-              ${
-                activeTab === 'hash_table'
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-          >
-            <Hash className={`w-4 h-4 ${activeTab === 'hash_table' ? 'text-amber-400' : 'text-slate-500'}`} />
-            High-Speed Search (Hash Table Chaining)
-          </button>
-        </div>
-      </nav>
-
-      {/* 3. Primary Content Section */}
+      {/* 2. Primary Content Section */}
       <main className="max-w-7xl mx-auto w-full px-6 py-6 flex-1">
         <AnimatePresence mode="wait">
-          {activeTab === 'navigation' && (
             <motion.div
               key="navigation"
               initial={{ opacity: 0, y: 10 }}
@@ -416,31 +358,6 @@ export default function App() {
                 </div>
               )}
             </motion.div>
-          )}
-
-          {activeTab === 'tree' && (
-            <motion.div
-              key="tree"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              <TreeVisualizer />
-            </motion.div>
-          )}
-
-          {activeTab === 'hash_table' && (
-            <motion.div
-              key="hash_table"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              <HashTableVisualizer />
-            </motion.div>
-          )}
         </AnimatePresence>
       </main>
 
